@@ -1,26 +1,74 @@
 import React, { useRef, useState } from "react";
 import Header from "./Header";
 import { checkValidData } from "../utils/validation";
+import { auth } from "../utils/firebase";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [isAlreadyUser, setIsAlreadyUser] = useState(true);
-  const [errorMessage, setErrorMessage]=useState(null)
+  const [errorMessage, setErrorMessage] = useState(null);
+  const navigate = useNavigate()
+
+  const email = useRef(null);
+  const password = useRef(null);
 
   const handleSignUp = () => {
     setIsAlreadyUser(!isAlreadyUser);
   };
 
-  const email = useRef(null)
-  const password = useRef(null)
- 
   const handleClick = () => {
+    console.log(email.current.value);
+    console.log(password.current.value);
+    const message = checkValidData(email.current.value, password.current.value);
 
-    const emailValue = email.current.value
-    const passwordValue = password.current.value
-    const message =  checkValidData(emailValue, passwordValue)
     console.log(message);
-    setErrorMessage(message)
+    setErrorMessage(message);
 
+    if (message) return;
+
+    if (!isAlreadyUser) {
+      //Sign up form
+      createUserWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed up
+          const user = userCredential.user;
+          console.log(user);
+          navigate("/browse")
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+
+          setErrorMessage(errorCode + " " + errorMessage);
+        });
+    } else {
+      //Sign in form
+      signInWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+
+          console.log(user);
+          navigate("/browse")
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          setErrorMessage(errorCode + " " + errorMessage);
+        });
+    }
   };
 
   return (
